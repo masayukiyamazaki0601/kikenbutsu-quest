@@ -336,6 +336,45 @@ body {
 .imp-mid { background: rgba(251,191,36,.15); color: var(--amber); }
 .guide-card .imp-badge { font-size: 9px; padding: 2px 6px; margin-top: 4px; }
 
+/* 検索バー */
+.search-box {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(30,41,59,.8);
+  background: rgba(15,23,42,.8);
+  color: #f8fafc;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  outline: none;
+  transition: .15s;
+  margin-bottom: 12px;
+}
+.search-box::placeholder { color: #475569; font-weight: 400; }
+.search-box:focus { border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(34,211,238,.15); }
+
+/* 進捗バー */
+.progress-wrap { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(30,41,59,.5); }
+.progress-bar-bg { width: 100%; height: 6px; background: rgba(15,23,42,.8); border-radius: 3px; overflow: hidden; }
+.progress-bar-fill { height: 100%; border-radius: 3px; transition: width .5s ease; }
+.progress-text { font-size: 10px; color: #6b7a99; font-weight: 700; margin-top: 4px; display: flex; justify-content: space-between; }
+
+/* アニメーション: フェードイン */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fade-up .35s ease both; }
+.guide-card { animation: fade-up .35s ease both; }
+.guide-card:nth-child(2) { animation-delay: .05s; }
+.guide-card:nth-child(3) { animation-delay: .1s; }
+.guide-card:nth-child(4) { animation-delay: .15s; }
+.guide-card:nth-child(5) { animation-delay: .2s; }
+.guide-card:nth-child(6) { animation-delay: .25s; }
+.guide-card:nth-child(7) { animation-delay: .3s; }
+.guide-card:nth-child(8) { animation-delay: .35s; }
+
 /* フッター */
 footer {
   text-align: center;
@@ -402,6 +441,15 @@ footer {
           <div class="cat-item" style="border-color:rgba(129,140,248,.2);color:var(--indigo);background:rgba(129,140,248,.06)"><span>第6類：酸化性液体</span><span style="opacity:.5">🧪</span></div>
         </div>
       </div>
+
+      <!-- 進捗トラッカー -->
+      <div class="side-panel" style="margin-top:16px">
+        <h3>📊 読書進捗</h3>
+        <div id="progressDisplay">
+          <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill" style="width:0%;background:linear-gradient(90deg,var(--rose),var(--amber))"></div></div>
+          <div class="progress-text"><span id="progressLabel">0 / 29 記事</span><span id="progressPct">0%</span></div>
+        </div>
+      </div>
     </aside>
   </div>
 
@@ -416,7 +464,31 @@ footer {
 // === 重要度 ===
 var HIGH = "★★★", MID = "★★☆";
 
-// === 危険物データ（boki-3のガイドデータ準拠） ===
+// === 読書進捗（localStorage） ===
+var PROGRESS_KEY = "kikenbutsu_read";
+function getReadSet() { try { return new Set(JSON.parse(localStorage.getItem(PROGRESS_KEY)||"[]")); } catch(e){return new Set()} }
+function saveReadSet(s) { localStorage.setItem(PROGRESS_KEY, JSON.stringify([...s])); }
+function toggleRead(slug) {
+  var s = getReadSet();
+  if (s.has(slug)) s.delete(slug); else s.add(slug);
+  saveReadSet(s);
+  updateProgress();
+}
+function isRead(slug) { return getReadSet().has(slug); }
+
+function updateProgress() {
+  var read = getReadSet();
+  var total = GUIDES.length;
+  var done = GUIDES.filter(function(g){return read.has(g.slug)}).length;
+  var fill = document.getElementById("progressFill");
+  var label = document.getElementById("progressLabel");
+  var pct = document.getElementById("progressPct");
+  if (fill) fill.style.width = (total>0?(done/total*100):0)+"%";
+  if (label) label.textContent = done+" / "+total+" 記事";
+  if (pct) pct.textContent = Math.round(total>0?(done/total*100):0)+"%";
+}
+
+// === 危険物データ ===
 const GUIDES = [
   // ★★★ 最重要（毎回出題）
   {slug:"gasoline",level:7,importance:HIGH,title:"ガソリンの性質【最重要】",desc:"引火点-40℃・静電気危険・指定数量200L",tags:["第4類","ガソリン"],content:`
@@ -952,6 +1024,51 @@ const GUIDES = [
 </ul>
 
 <blockquote>💡 「水溶性＝アルコール類」「消火は耐アルコール泡」「指定数量400L」の3点セットで押さえよう！</blockquote>`},
+  // ★★☆ 新規追加：移動タンク貯蔵所・製造所の基準
+  {slug:"mobile-tank",level:10,importance:MID,title:"移動タンク貯蔵所・製造所の基準",desc:"タンクローリーの構造基準・製造所の設備基準",tags:["施設","移動タンク"],content:`
+<p class="imp-mid" style="display:inline-block;padding:4px 10px;border-radius:6px;font-size:12px">🚛 タンクローリーの構造基準と製造所の設備が頻出</p>
+
+<h2>🚛 移動タンク貯蔵所（タンクローリー）</h2>
+<p>危険物を運搬するためのタンクを車両に固定したものを「移動タンク貯蔵所」といいます。街で見かけるタンクローリーのことです。</p>
+
+<h2>📏 タンクの構造基準</h2>
+<table style="width:100%;border-collapse:collapse;margin:10px 0">
+<tr style="background:rgba(0,0,0,.08)"><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">項目</td><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">基準</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">タンクの材質</td><td style="padding:6px 10px;border:1px solid #c4b998"><strong>金属製</strong>（主に鋼板またはステンレス）</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">板厚</td><td style="padding:6px 10px;border:1px solid #c4b998">タンク容量に応じて決まる（最低3.2mm以上）</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">隔壁</td><td style="padding:6px 10px;border:1px solid #c4b998">液体の<strong>動揺防止</strong>のための隔壁を内部に設置</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">マンホール</td><td style="padding:6px 10px;border:1px solid #c4b998">点検用の開口部。大きさは直径40cm以上</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">安全装置</td><td style="padding:6px 10px;border:1px solid #c4b998"><strong>緊急遮断弁</strong>・<strong>安全弁</strong>・<strong>静電気除去装置</strong></td></tr>
+</table>
+
+<h2>⚠️ 移動タンク貯蔵所の保安措置</h2>
+<ul>
+  <li><strong>緊急遮断弁</strong>：事故時に遠隔操作でバルブを閉じて流出防止</li>
+  <li><strong>安全弁</strong>：タンク内圧が異常上昇したときに自動で開放</li>
+  <li><strong>静電気除去装置</strong>：<strong>接地（アース）</strong>チェーンを引きずる</li>
+  <li><strong>積載中の点検</strong>：定期的に漏れや温度上昇を確認</li>
+</ul>
+
+<h2>🏭 製造所の設備基準</h2>
+<p>危険物を<strong>製造</strong>する施設（化学工場など）は、最も厳しい基準が適用されます。</p>
+
+<table style="width:100%;border-collapse:collapse;margin:10px 0">
+<tr style="background:rgba(0,0,0,.08)"><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">設備</td><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">基準</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">建築物</td><td style="padding:6px 10px;border:1px solid #c4b998"><strong>不燃材料</strong>で建築。主要構造部は<strong>耐火構造</strong></td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">換気</td><td style="padding:6px 10px;border:1px solid #c4b998">強制換気設備（自然換気では不十分）</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">床</td><td style="padding:6px 10px;border:1px solid #c4b998">危険物が<strong>浸透しない</strong>材料。傾斜をつけて流出を集める</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">防液堤</td><td style="padding:6px 10px;border:1px solid #c4b998">タンク周囲に設置。漏れ出した危険物を閉じ込める</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">消火設備</td><td style="padding:6px 10px;border:1px solid #c4b998">危険物の性質に応じた消火設備を設置</td></tr>
+</table>
+
+<h2>📝 よく出る問題</h2>
+<ul>
+  <li>「移動タンクのタンク材質はプラスチックでOK？」→ ❌ <strong>金属製</strong>！</li>
+  <li>「製造所の床は普通のコンクリートでOK？」→ ❌ 危険物が<strong>浸透しない材料</strong>が必要</li>
+  <li>「タンクローリーの安全装置は緊急遮断弁だけ？」→ ❌ 安全弁・静電気除去装置も必要</li>
+</ul>
+
+<blockquote>💡 移動タンクのキーワード：「金属製タンク」「隔壁」「緊急遮断弁」「静電気除去」。製造所のキーワード：「不燃材料」「耐火構造」「強制換気」。セットで暗記！</blockquote>`},
 ];
 
 const FIELDS = [
@@ -973,47 +1090,84 @@ const LEVEL_META = [
 ];
 
 var currentView = 'field';
+var searchQuery = '';
 
-function showTop() { currentView='field'; renderMain(); }
+function showTop() { currentView='field'; searchQuery=''; renderMain(); }
 
 function renderMain() {
   var main = document.getElementById("mainContent");
   var html = '<div class="breadcrumb" style="margin-bottom:20px"><a href="#">📚 魔導書一覧</a></div>';
+
+  // 検索バー
+  html += '<input class="search-box" id="searchBox" type="text" placeholder="🔍 記事を検索（例: ガソリン、消火、貯蔵所）" value="'+searchQuery.replace(/"/g,'"')+'" oninput="doSearch(this.value)">';
+
   html += '<div class="view-toggle">'
     + '<button class="view-btn'+(currentView==='field'?' active':'')+'" onclick="switchView(\'field\')">📂 重要度別</button>'
     + '<button class="view-btn'+(currentView==='level'?' active':'')+'" onclick="switchView(\'level\')">📊 レベル別</button>'
     + '</div>';
+
+  // フィルタリング
+  var filtered = GUIDES;
+  if (searchQuery) {
+    var q = searchQuery.toLowerCase();
+    filtered = GUIDES.filter(function(g){
+      return g.title.toLowerCase().indexOf(q)>=0
+        || g.desc.toLowerCase().indexOf(q)>=0
+        || g.tags.some(function(t){return t.toLowerCase().indexOf(q)>=0})
+        || g.content.toLowerCase().indexOf(q)>=0;
+    });
+  }
+
   if (currentView==='level') {
     html += '<div class="level-grid">';
     LEVEL_META.forEach(function(lm){
-      var cnt = GUIDES.filter(function(g){return g.level===lm.lv}).length;
-      var hi = GUIDES.filter(function(g){return g.level===lm.lv&&g.importance===HIGH}).length;
+      var cnt = filtered.filter(function(g){return g.level===lm.lv}).length;
+      var hi = filtered.filter(function(g){return g.level===lm.lv&&g.importance===HIGH}).length;
+      if (cnt===0) return;
+      var read = getReadSet();
+      var done = filtered.filter(function(g){return g.level===lm.lv&&read.has(g.slug)}).length;
       html += '<a href="#" class="level-card" onclick="showLevel('+lm.lv+');return false">'
         +'<div style="font-size:28px;margin-bottom:4px">'+lm.icon+'</div>'
         +'<div class="lv-num">Lv.'+lm.lv+'</div>'
         +'<div class="lv-title">'+lm.title+'</div>'
-        +'<div class="lv-count">'+cnt+'記事'+(hi>0?' ★★★':'')+'</div></a>';
+        +'<div class="lv-count">'+cnt+'記事'+(hi>0?' ★★★':'')+'</div>'
+        +(done>0?'<div style="font-size:9px;color:var(--emerald);margin-top:2px">✅ '+done+'/'+cnt+'</div>':'')
+        +'</a>';
     });
     html += '</div>';
   } else {
     [HIGH, MID].forEach(function(imp){
       var label = imp===HIGH ? "★★★ 最重要（毎回出題）" : "★★☆ 頻出";
       var color = imp===HIGH ? "var(--rose)" : "var(--amber)";
-      var guides = GUIDES.filter(function(g){return g.importance===imp});
+      var guides = filtered.filter(function(g){return g.importance===imp});
+      if (guides.length===0) return;
+      var read = getReadSet();
+      var done = guides.filter(function(g){return read.has(g.slug)}).length;
       html += '<div style="margin-bottom:24px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
         + '<span style="font-size:16px;color:'+color+'">'+label+'</span>'
-        + '<span style="font-size:11px;color:#6b7a99;font-weight:700">'+guides.length+'記事</span></div><div class="guide-list">';
+        + '<span style="font-size:11px;color:#6b7a99;font-weight:700">'+guides.length+'記事'+(done>0?' ✅ '+done+'/'+guides.length:'')+'</span></div><div class="guide-list">';
       guides.forEach(function(g){
-        html += '<a href="#" class="guide-card" onclick="showGuide(\''+g.slug+'\');return false">'
-          +'<div class="lv" style="color:'+color+'">Lv.'+g.level+' '+g.importance+'</div>'
+        var readClass = read.has(g.slug) ? ' style="border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.06)"' : '';
+        html += '<a href="#" class="guide-card fade-in" onclick="showGuide(\''+g.slug+'\');return false"'+readClass+'>'
+          +'<div class="lv" style="color:'+color+'">'+(read.has(g.slug)?'✅ ':'')+'Lv.'+g.level+' '+g.importance+'</div>'
           +'<div class="title">'+g.title+'</div>'
           +'<div class="desc">'+g.desc+'</div></a>';
       });
       html += '</div></div>';
     });
   }
+
+  if (filtered.length===0) {
+    html += '<div style="text-align:center;padding:40px;color:#6b7a99;font-size:14px">🔍 「'+searchQuery+'」に一致する記事はありません</div>';
+  }
+
   main.innerHTML = html;
   updateFieldList();
+}
+
+function doSearch(val) {
+  searchQuery = val;
+  renderMain();
 }
 
 function switchView(v) { currentView=v; renderMain(); }
@@ -1022,12 +1176,17 @@ function showLevel(lv) {
   var guides = GUIDES.filter(function(g){return g.level===lv});
   var lm = LEVEL_META.find(function(m){return m.lv===lv});
   var main = document.getElementById("mainContent");
+  var read = getReadSet();
+  var done = guides.filter(function(g){return read.has(g.slug)}).length;
   var html = '<div class="breadcrumb" style="margin-bottom:20px"><a href="#" onclick="showTop();return false">← 魔導書一覧へ</a>'
-    +'<span class="lv-badge">Lv.'+lv+' '+(lm?lm.title:'')+'</span></div><div class="guide-list">';
+    +'<span class="lv-badge">Lv.'+lv+' '+(lm?lm.title:'')+'</span></div>'
+    +(done>0?'<div style="font-size:11px;color:var(--emerald);font-weight:700;margin-bottom:12px">✅ '+done+'/'+guides.length+' 読了</div>':'')
+    +'<div class="guide-list">';
   guides.forEach(function(g){
     var c = g.importance===HIGH ? "var(--rose)" : "var(--amber)";
-    html += '<a href="#" class="guide-card" onclick="showGuide(\''+g.slug+'\');return false">'
-      +'<div class="lv" style="color:'+c+'">'+g.importance+'</div>'
+    var readClass = read.has(g.slug) ? ' style="border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.06)"' : '';
+    html += '<a href="#" class="guide-card fade-in" onclick="showGuide(\''+g.slug+'\');return false"'+readClass+'>'
+      +'<div class="lv" style="color:'+c+'">'+(read.has(g.slug)?'✅ ':'')+g.importance+'</div>'
       +'<div class="title">'+g.title+'</div>'
       +'<div class="desc">'+g.desc+'</div></a>';
   });
@@ -1039,6 +1198,10 @@ function showLevel(lv) {
 function showGuide(slug) {
   var g = GUIDES.find(function(x){return x.slug===slug});
   if (!g) return;
+
+  // 既読トグル
+  toggleRead(slug);
+
   var main = document.getElementById("mainContent");
   var impColor = g.importance===HIGH ? "var(--rose)" : "var(--amber)";
   var impBg = g.importance===HIGH ? "rgba(251,113,133,.15)" : "rgba(251,191,36,.15)";
@@ -1046,10 +1209,24 @@ function showGuide(slug) {
     +'<span class="lv-badge" style="color:'+impColor+';border-color:'+impColor+'30">Lv.'+g.level+'</span></div>'
     +'<span class="imp-badge" style="background:'+impBg+';color:'+impColor+'">重要度：'+g.importance+'</span>'
     +'<div class="article-header" style="margin-top:4px"><h1>'+g.title+'</h1><p>'+g.desc+'</p>'
-    +'<div class="tags">'+g.tags.map(function(t){return '<span class="tag">🏷 '+t+'</span>'}).join("")+'</div></div>'
-    +'<div class="parchment">'+g.content+'</div>';
+    +'<div class="tags">'+g.tags.map(function(t){return '<span class="tag">🏷 '+t+'</span>'}).join("")+'</div>'
+    +'<div style="margin-top:8px"><button onclick="speakArticle(\''+g.slug+'\')" style="background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.3);border-radius:6px;color:var(--cyan);padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer">🔊 音声で聞く</button></div>'
+    +'</div>'
+    +'<div class="parchment fade-in">'+g.content+'</div>';
   updateFieldList(slug);
   window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// 音声読み上げ（簡易版）
+function speakArticle(slug) {
+  var g = GUIDES.find(function(x){return x.slug===slug});
+  if (!g || !window.speechSynthesis) return;
+  var text = g.title + "。" + g.desc + "。" + g.content.replace(/<[^>]*>/g,"").replace(/\s+/g," ");
+  var u = new SpeechSynthesisUtterance(text);
+  u.lang = "ja-JP";
+  u.rate = 0.8;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
 }
 
 function updateFieldList(activeSlug) {
@@ -1070,15 +1247,21 @@ function updateFieldList(activeSlug) {
 
 function showImp(imp) {
   currentView = 'field';
+  searchQuery = '';
   var main = document.getElementById("mainContent");
   var label = imp===HIGH ? "★★★ 最重要" : "★★☆ 頻出";
   var color = imp===HIGH ? "var(--rose)" : "var(--amber)";
   var guides = GUIDES.filter(function(g){return g.importance===imp});
+  var read = getReadSet();
+  var done = guides.filter(function(g){return read.has(g.slug)}).length;
   var html = '<div class="breadcrumb" style="margin-bottom:20px"><a href="#" onclick="showTop();return false">← 魔導書一覧</a>'
-    +'<span class="lv-badge" style="color:'+color+'">'+label+'</span></div><div class="guide-list">';
+    +'<span class="lv-badge" style="color:'+color+'">'+label+'</span></div>'
+    +(done>0?'<div style="font-size:11px;color:var(--emerald);font-weight:700;margin-bottom:12px">✅ '+done+'/'+guides.length+' 読了</div>':'')
+    +'<div class="guide-list">';
   guides.forEach(function(g){
-    html += '<a href="#" class="guide-card" onclick="showGuide(\''+g.slug+'\');return false">'
-      +'<div class="lv" style="color:'+color+'">Lv.'+g.level+' '+g.importance+'</div>'
+    var readClass = read.has(g.slug) ? ' style="border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.06)"' : '';
+    html += '<a href="#" class="guide-card fade-in" onclick="showGuide(\''+g.slug+'\');return false"'+readClass+'>'
+      +'<div class="lv" style="color:'+color+'">'+(read.has(g.slug)?'✅ ':'')+'Lv.'+g.level+' '+g.importance+'</div>'
       +'<div class="title">'+g.title+'</div>'
       +'<div class="desc">'+g.desc+'</div></a>';
   });
@@ -1088,6 +1271,7 @@ function showImp(imp) {
 }
 
 showTop();
+updateProgress();
 </script>
 </body>
 </html>
