@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>危険物取扱者・クエスト 〜爆炎魔導書ライブラリ〜</title>
+<style>
+:root{color-scheme:dark;--bg:#090d16;--panel:#111827;--panel2:#1e293b;--text:#e2e8f0;--muted:#6b7a99;--line:#1e3a5f;--cyan:#22d3ee;--amber:#fbbf24;--rose:#fb7185;--emerald:#34d399;--indigo:#818cf8;--sepia-bg:#faf6eb;--sepia-text:#433422;--sepia-border:#e6dac6;--shadow:0 18px 48px rgba(0,0,0,.5)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#090d16;color:var(--text);min-height:100vh;display:flex;justify-content:center;align-items:center}
+.app{width:100%;max-width:420px;height:100vh;max-height:860px;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;position:relative}
+@media(min-width:480px){.app{border-radius:24px;height:860px;border:2px solid var(--line)}}
+/* ヘッダー */
+.header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:linear-gradient(180deg,#0f1a2e,var(--bg));border-bottom:1px solid var(--line);flex-shrink:0}
+.header-left{display:flex;align-items:center;gap:10px}
+.avatar{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--rose),var(--amber));display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#0a0f1a;box-shadow:0 0 16px rgba(251,113,133,.3)}
+.exp-bar{flex:1;min-width:0}
+.exp-label{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:700;margin-bottom:2px}
+.exp-track{height:5px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden}
+.exp-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--rose),var(--amber));border-radius:99px;transition:width .5s}
+.mute-btn{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px}
+/* メイン */
+.main{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+/* マップ: boki-siwakeb準拠 縦スクロールノード */
+.map-title{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;padding:0 2px}
+.map-container{position:relative;display:flex;flex-direction:column;gap:12px;padding:0 2px}
+.map-line{position:absolute;left:19px;top:28px;bottom:28px;width:2px;background:var(--line);z-index:0;border-radius:99px}
+.node-row{display:flex;align-items:center;gap:10px;position:relative;z-index:1}
+.node-circle{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:2px solid var(--line);background:var(--panel2);font-size:14px;font-weight:800;color:var(--muted);transition:.15s}
+.node-circle.done{background:var(--emerald);border-color:var(--emerald);color:#fff}
+.node-circle.current{background:var(--rose);border-color:#fff;color:#fff;box-shadow:0 0 16px rgba(251,113,133,.4);animation:pulse 2s infinite}
+.node-card{flex:1;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--panel);cursor:pointer;transition:.15s;text-align:left;color:var(--text)}
+.node-card:hover{border-color:var(--indigo)}
+.node-card .lv-tag{font-size:9px;font-weight:800;color:var(--rose);margin-bottom:2px}
+.node-card .lv-title{font-size:12px;font-weight:800;line-height:1.3}
+.node-card .lv-desc{font-size:10px;color:var(--muted);margin-top:2px}
+.node-card .lv-imp{font-size:8px;margin-top:3px;display:inline-block;padding:1px 5px;border-radius:3px;font-weight:800}
+.imp-high{background:rgba(251,113,133,.15);color:var(--rose)}
+.imp-mid{background:rgba(251,191,36,.15);color:var(--amber)}
+
+@keyframes pulse{0%,100%{box-shadow:0 0 16px rgba(251,113,133,.4)}50%{box-shadow:0 0 28px rgba(251,113,133,.7)}}
+
+/* モーダル（レベル選択） */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:50;display:flex;align-items:flex-end;padding:16px}
+.modal-content{width:100%;max-width:400px;margin:0 auto;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:20px;max-height:70vh;overflow-y:auto;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.modal-header .icon{font-size:24px}
+.modal-header h3{font-size:14px;font-weight:900}
+.modal-header .sub{font-size:10px;color:var(--muted)}
+.modal-articles{display:flex;flex-direction:column;gap:8px}
+.modal-article{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--panel2);cursor:pointer;transition:.15s;color:var(--text);text-align:left;display:block;width:100%;text-decoration:none}
+.modal-article:hover{border-color:var(--indigo)}
+.modal-article .art-title{font-size:13px;font-weight:800}
+.modal-article .art-desc{font-size:10px;color:var(--muted);margin-top:2px}
+.modal-close{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;margin-top:8px;transition:.15s}
+
+/* バトル記事詳細（boki-3羊皮紙継承） */
+.parchment{background:var(--sepia-bg);color:var(--sepia-text);border-radius:16px;padding:20px;border:2px solid var(--sepia-border);box-shadow:0 4px 16px rgba(0,0,0,.3);line-height:1.8;font-size:14px;position:relative;overflow:hidden;margin-top:12px}
+.parchment::before{content:"";position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c4b998' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");pointer-events:none}
+.parchment h2{font-size:18px;font-weight:800;margin:20px 0 10px;padding-bottom:4px;border-bottom:2px solid var(--sepia-border)}
+.parchment h3{font-size:15px;font-weight:700;margin:14px 0 8px}
+.parchment p{margin:8px 0}
+.parchment ul,.parchment ol{margin:6px 0;padding-left:18px}
+.parchment li{margin:3px 0}
+.parchment strong{color:#221a0e}
+.parchment blockquote{border-left:3px solid #c4b998;margin:10px 0;padding:6px 14px;background:rgba(196,185,152,.15);border-radius:0 8px 8px 0;font-style:italic;font-size:13px}
+.header-back{display:flex;align-items:center;gap:4px;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;background:none;border:none;padding:4px 0}
+.header-back:hover{color:var(--text)}
+.article-header{margin-bottom:8px}
+.article-header h1{font-size:18px;font-weight:900;color:#fff;line-height:1.2;margin-bottom:4px}
+.article-header .sub{font-size:11px;color:var(--muted)}
+.art-imp{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:800;margin-bottom:6px}
+.art-tags{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 8px}
+.art-tag{font-size:9px;color:var(--muted);background:rgba(15,23,42,.8);padding:2px 6px;border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-left">
+      <div class="avatar">🔥</div>
+      <div class="exp-bar">
+        <div class="exp-label"><span id="titleText">爆炎魔導書</span><span id="xpText">10/10</span></div>
+        <div class="exp-track"><div class="exp-fill" id="expFill" style="width:100%"></div></div>
+      </div>
+    </div>
+    <button class="mute-btn" id="muteBtn">🔊</button>
+  </div>
+  <div class="main" id="mainContent"></div>
+</div>
+<script>
+// === 危険物取扱者 解説データ（boki-siwakeb方式・レベル別マップ） ===
+var IMPORTANCE = {high:"★★★",mid:"★★☆",low:"★☆☆"};
+
+const GUIDES = [
+  // ★★★ 最重要（毎回出題）
+  {slug:"gasoline",level:7,importance:IMPORTANCE.high,title:"ガソリンの性質【最重要】",desc:"引火点-40℃・静電気危険",tags:["第4類","ガソリン"],content:`
+<h2>1. ガソリンの基本特性</h2>
+<ul><li>引火点：-40℃以下（第4類で最低）</li><li>発火点：約300℃</li><li>燃焼範囲：1.4%〜7.6%</li><li>比重：0.5〜0.8（水より軽い）</li><li>水に溶けない</li><li>指定数量：200L（最少）</li></ul>
+<h2>2. 静電気危険</h2>
+<p>電気伝導率が極めて低く帯電しやすい。給油時はエンジン停止、金属容器へは接地。</p>
+<h2>3. 蒸気の特性</h2>
+<p>蒸気比重3〜4（空気より重い）。床面に滞留し引火しやすい。</p>
+<blockquote>💡 ガソリンの数値は毎回必出。200L・-40℃・1.4%〜7.6%は完全暗記。</blockquote>`},
+  {slug:"gasoline-fire",level:7,importance:IMPORTANCE.high,title:"ガソリン火災の消火",desc:"B火災・水禁忌",tags:["第4類","消火"],content:`
+<h2>1. ガソリン火災の特徴</h2>
+<p>引火点-40℃以下で常温常に危険。蒸気は床面滞留。静電気で着火。</p>
+<h2>2. 適切な消火剤</h2>
+<ul><li>粉末消火器（ABC汎用）</li><li>泡消火器（油面被覆・窒息）</li><li>CO2消火器</li></ul>
+<h2>3. 絶対禁忌</h2>
+<p><strong>水は絶対にかけるな。</strong>油が飛散し火災拡大。</p>
+<blockquote>💡 B火災（油火災）に水禁忌は毎回必出。</blockquote>`},
+  {slug:"flashpoint",level:7,importance:IMPORTANCE.high,title:"引火点順位の完全暗記",desc:"ガソリン＜アルコール＜灯油＜軽油＜重油",tags:["第4類","引火点"],content:`
+<h2>1. 第4類の引火点順位（完全暗記）</h2>
+<p><strong>ガソリン(-40℃) ＜ アルコール(13℃) ＜ 灯油(40℃) ＜ 軽油(45℃) ＜ 重油(60℃以上)</strong></p>
+<h2>2. 発火点一覧</h2>
+<ul><li>ガソリン：300℃</li><li>アルコール：400℃</li><li>灯油：250℃</li><li>軽油：220℃</li><li>重油：不明</li></ul>
+<blockquote>💡 引火点が低いほど危険。ガソリンvs重油の比較が頻出。</blockquote>`},
+  {slug:"gasoline-num",level:7,importance:IMPORTANCE.high,title:"ガソリンの数値完全暗記",desc:"200L・-40℃・1.4%〜7.6%",tags:["第4類","数値"],content:`
+<h2>ガソリン数値一覧（毎回必出）</h2>
+<ul><li>引火点：-40℃以下</li><li>発火点：約300℃</li><li>燃焼範囲：1.4%〜7.6%</li><li>比重：0.5〜0.8</li><li>蒸気比重：3〜4</li><li>沸点：30〜200℃</li><li>指定数量：200L</li></ul>
+<blockquote>💡 語呂：「200L（ニイマルマル）」「-40℃（マイナスシイレイ）」「1.4%〜7.6%（イチヨンカラナナロク）」</blockquote>`},
+  {slug:"combustion",level:4,importance:IMPORTANCE.high,title:"燃焼の3要素",desc:"可燃物・酸素・点火源",tags:["化学","燃焼"],content:`
+<h2>1. 燃焼の3要素</h2>
+<ul><li>可燃物：燃える物質</li><li>酸素供給源：主に空気中の酸素</li><li>点火源：火花・高温・摩擦</li></ul>
+<p>消火はこのうち1つ以上を取り除くこと。</p>
+<h2>2. 燃焼範囲</h2>
+<ul><li>ガソリン：1.4%〜7.6%</li><li>水素：4.0%〜75%</li></ul>
+<h2>3. 引火点と発火点</h2>
+<p>引火点：火を近づけたとき点火する最低温度。発火点：自然に発火する温度。</p>
+<blockquote>💡 燃焼の3要素は毎回必ず1問出る。</blockquote>`},
+  {slug:"hazard-class",level:4,importance:IMPORTANCE.high,title:"危険物の6分類",desc:"第1類〜第6類一覧",tags:["化学","分類"],content:`
+<h2>6分類一覧</h2>
+<ul><li>第1類：酸化性固体（塩素酸カリウム）</li><li>第2類：可燃性固体（マグネシウム・硫黄）</li><li>第3類：自然発火・禁水性（ナトリウム・黄リン）</li><li>第4類：引火性液体（ガソリン・灯油）</li><li>第5類：自己反応性物質（硝酸エステル）</li><li>第6類：酸化性液体（硝酸）</li></ul>
+<blockquote>💡 第3類「ナトリウムは灯油中・黄リンは水中」は頻出。</blockquote>`},
+  {slug:"fire-extinguish",level:5,importance:IMPORTANCE.high,title:"消火理論と消火剤",desc:"3原理と適切な消火器",tags:["化学","消火"],content:`
+<h2>1. 消火の3原理</h2>
+<ul><li>窒息消火：酸素遮断（泡・CO2）</li><li>冷却消火：温度低下（水）</li><li>除去消火：可燃物除去</li></ul>
+<h2>2. 危険物別消火剤</h2>
+<ul><li>油火災：泡・粉末（水禁忌）</li><li>金属火災：乾燥砂（水絶対禁止）</li><li>電気火災：CO2・粉末</li></ul>
+<blockquote>💡 B火災（油）に水禁忌は毎回必出。</blockquote>`},
+  {slug:"law-quantity",level:1,importance:IMPORTANCE.high,title:"指定数量の暗記",desc:"200L・400L・1,000L・2,000L",tags:["法令","指定数量"],content:`
+<h2>1. 指定数量一覧（完全暗記）</h2>
+<ul><li>ガソリン：200L</li><li>アルコール：400L</li><li>灯油・軽油：1,000L</li><li>重油：2,000L</li></ul>
+<h2>2. 倍数計算</h2>
+<p>合計が1以上で許可が必要。</p>
+<blockquote>💡 200Lと2,000Lの10倍差は頻出。</blockquote>`},
+  {slug:"law-supervisor",level:2,importance:IMPORTANCE.high,title:"保安監督者制度",desc:"選任と職務",tags:["法令","保安監督"],content:`
+<h2>保安監督者</h2>
+<p>製造所・貯蔵所・取扱所ごとに選任。危険物取扱者免状保持者から選ぶ。</p>
+<ul><li>甲種：全施設可</li><li>乙種：受験類のみ</li><li>丙種：給油取扱所のみ</li></ul>
+<blockquote>💡 「保安監督者は免状交付者から選任」が穴埋め頻出。</blockquote>`},
+  {slug:"law-penalty",level:2,importance:IMPORTANCE.high,title:"罰則と行政処分",desc:"3年/300万円",tags:["法令","罰則"],content:`
+<h2>罰則一覧</h2>
+<ul><li>無許可貯蔵：3年以下の懲役又は300万円以下の罰金</li><li>危険物流出：同様</li><li>保安監督者未選任：過料</li></ul>
+<blockquote>💡 「3年/300万円」は鉄板。数字は確実に。</blockquote>`},
+  {slug:"storage-facility",level:10,importance:IMPORTANCE.high,title:"貯蔵所の構造基準",desc:"防油堤・耐火・換気",tags:["施設","基準"],content:`
+<h2>1. 屋内貯蔵所</h2>
+<ul><li>不燃材料</li><li>床は危険物不浸透</li><li>換気設備</li><li>主要構造部耐火</li></ul>
+<h2>2. 屋外タンク貯蔵所</h2>
+<ul><li>防油堤（高さ50cm以上）</li><li>鋼板厚3.2mm以上</li></ul>
+<h2>3. 給油取扱所</h2>
+<ul><li>エンジン停止</li><li>静電気除去</li><li>携行缶はノズル接触給油</li></ul>
+<blockquote>💡 毎回2〜3問出る。防油堤が最重要キーワード。</blockquote>`},
+  // ★★ 頻出
+  {slug:"kerosene",level:8,importance:IMPORTANCE.mid,title:"灯油・軽油の性質",desc:"引火点40℃・1,000L",tags:["第4類","灯油"],content:`
+<ul><li>灯油：引火点40℃以上、指定数量1,000L</li><li>軽油：引火点45℃以上、指定数量1,000L</li></ul>
+<blockquote>💡 灯油と軽油の指定数量は同じ1,000L。</blockquote>`},
+  {slug:"heavy-oil",level:8,importance:IMPORTANCE.mid,title:"重油の性質",desc:"引火点60℃・2,000L",tags:["第4類","重油"],content:`
+<ul><li>引火点：60℃以上</li><li>指定数量：2,000L</li><li>粘性の高い暗褐色</li></ul>
+<blockquote>💡 第4類で最も引火点が高く、最も安全。</blockquote>`},
+  {slug:"alcohol",level:9,importance:IMPORTANCE.mid,title:"アルコール類の性質",desc:"水溶性・引火点13℃",tags:["第4類","アルコール"],content:`
+<ul><li>引火点：13℃</li><li>指定数量：400L</li><li>水溶性（第4類で唯一）</li><li>消火は耐アルコール泡</li></ul>
+<blockquote>💡 「水溶性＝アルコール」は頻出。</blockquote>`},
+  {slug:"special",level:10,importance:IMPORTANCE.mid,title:"第1・2・3・5・6類の特性",desc:"他類の特徴",tags:["第1類","第2類","第3類","第5類","第6類"],content:`
+<ul><li>第1類：酸化性固体（塩素酸カリウム）</li><li>第2類：可燃性固体（マグネシウム）</li><li>第3類：自然発火・禁水性（Naは灯油中、黄リンは水中）</li><li>第5類：自己反応性</li><li>第6類：酸化性液体</li></ul>
+<blockquote>💡 Naと黄リンの保存方法は頻出。</blockquote>`},
+  {slug:"static-electricity",level:6,importance:IMPORTANCE.mid,title:"静電気と危険物",desc:"帯電・対策",tags:["化学","静電気"],content:`
+<ul><li>発生条件：流動・撹拌・ろ過・乾燥</li><li>対策：接地(アース)・除電器・導電性容器・流速制限</li></ul>
+<blockquote>💡 「静電気対策＝接地」は頻出。</blockquote>`},
+  {slug:"fire-spread",level:5,importance:IMPORTANCE.mid,title:"熱の伝わり方と危険性指標",desc:"伝導・対流・放射",tags:["化学","熱"],content:`
+<ul><li>熱伝導：物体を通して伝わる</li><li>熱対流：空気・液体の移動</li><li>熱放射：電磁波</li></ul>
+<blockquote>💡 蒸気比重と滞留性の関係は年1〜2回出題。</blockquote>`},
+  {slug:"fire-chemical",level:5,importance:IMPORTANCE.mid,title:"完全燃焼と不完全燃焼",desc:"CO発生の危険",tags:["化学","反応"],content:`
+<ul><li>完全燃焼：CO2+H2O</li><li>不完全燃焼：CO発生（一酸化炭素中毒の危険）</li></ul>
+<blockquote>💡 不完全燃焼＝CO。動植物油は自然発火の危険。</blockquote>`},
+  {slug:"law-storage-type",level:1,importance:IMPORTANCE.mid,title:"貯蔵所の6種類",desc:"種類と特徴",tags:["法令","貯蔵所"],content:`
+<ul><li>屋内・屋外タンク・地下タンク</li><li>簡易タンク・移動タンク・給油取扱所</li></ul>
+<blockquote>💡 地下タンクは防食措置が必要。</blockquote>`},
+  {slug:"law-fire-dept",level:3,importance:IMPORTANCE.mid,title:"消防機関の役割",desc:"許可・完成検査",tags:["法令","消防"],content:`
+<ul><li>設置許可：市町村長</li><li>完成検査合格で使用開始</li><li>消防職員の立入検査あり</li></ul>
+<blockquote>💡 設置許可＝市町村長。</blockquote>`},
+  {slug:"law-inspection",level:3,importance:IMPORTANCE.mid,title:"定期点検の周期",desc:"毎月・1年・10年",tags:["法令","点検"],content:`
+<ul><li>毎月1回：自主点検</li><li>1年以内ごと：定期点検</li><li>10年に1回：タンク開放点検</li><li>帳簿保存：2年間</li></ul>
+<blockquote>💡 3つの周期は数字問題で頻出。</blockquote>`},
+];
+
+// レベルメタデータ（boki-siwakebマップ準拠）
+const LEVEL_META = [
+  {lv:1,icon:"📜",title:"法令・指定数量の基礎",desc:"指定数量・貯蔵所の種類",color:"from-cyan-600 to-teal-600"},
+  {lv:2,icon:"⚖️",title:"保安監督と罰則",desc:"保安監督者・罰則3年/300万円",color:"from-indigo-600 to-violet-600"},
+  {lv:3,icon:"🏛️",title:"消防行政と点検",desc:"許可手続き・点検周期",color:"from-blue-600 to-purple-600"},
+  {lv:4,icon:"🔥",title:"燃焼と危険物分類",desc:"3要素・6分類",color:"from-rose-600 to-red-600"},
+  {lv:5,icon:"🧯",title:"消火と熱の科学",desc:"消火理論・熱伝播・化学反応",color:"from-orange-600 to-amber-600"},
+  {lv:6,icon:"⚡",title:"物理・静電気",desc:"比重・沸点・静電気対策",color:"from-yellow-600 to-orange-600"},
+  {lv:7,icon:"⛽",title:"ガソリン徹底攻略",desc:"引火点・数値・消火 ★★★",color:"from-rose-700 to-pink-700"},
+  {lv:8,icon:"🛢️",title:"灯油・軽油・重油",desc:"引火点比較と指定数量",color:"from-stone-600 to-stone-700"},
+  {lv:9,icon:"🧪",title:"アルコールと他類",desc:"水溶性・他類の特性",color:"from-emerald-600 to-teal-700"},
+  {lv:10,icon:"🚨",title:"貯蔵所構造と基準",desc:"防油堤・耐火構造 ★★★",color:"from-slate-700 to-slate-900"},
+];
+
+// 章の区切り
+const CHAPTERS = [
+  {start:1,title:"第1章：法令の基礎"},
+  {start:4,title:"第2章：基礎的な化学"},
+  {start:7,title:"第3章：危険物の性質"},
+];
+
+var selectedLevel = null;
+var viewingArticle = null;
+
+function render() {
+  var main = document.getElementById("mainContent");
+  if (viewingArticle) { renderArticle(main); return; }
+  if (selectedLevel !== null) { renderLevelModal(main); return; }
+  renderMap(main);
+}
+
+function renderMap(main) {
+  var html = '<div class="map-title">⚔ 爆炎魔導書マップ</div><div class="map-container"><div class="map-line"></div>';
+  LEVEL_META.forEach(function(meta, idx) {
+    var guides = GUIDES.filter(function(g){return g.level===meta.lv});
+    var high = GUIDES.filter(function(g){return g.level===meta.lv && g.importance===IMPORTANCE.high}).length;
+    var mid = GUIDES.filter(function(g){return g.level===meta.lv && g.importance===IMPORTANCE.mid}).length;
+    var isChapter = CHAPTERS.some(function(c){return c.start===meta.lv});
+    var ch = CHAPTERS.find(function(c){return c.start===meta.lv});
+    if (isChapter && ch) {
+      html += '<div style="padding:8px 0 4px 0;z-index:10;background:var(--bg)"><span style="font-size:9px;font-weight:700;color:var(--indigo);background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.2);padding:3px 8px;border-radius:99px;">' + ch.title + '</span></div>';
+    }
+    var isCurrent = idx === 0;
+    var circleClass = isCurrent ? 'current' : '';
+    html += '<div class="node-row">'
+      + '<div class="node-circle ' + circleClass + '">' + meta.lv + '</div>'
+      + '<div class="node-card" onclick="selectLevel(' + meta.lv + ')">'
+      + '<div class="lv-tag">Lv.' + meta.lv + ' ' + (high>0?'★★★':'') + (mid>0?'★★☆':'') + '</div>'
+      + '<div class="lv-title">' + meta.icon + ' ' + meta.title + '</div>'
+      + '<div class="lv-desc">' + meta.desc + '</div>'
+      + '<div style="margin-top:4px;display:flex;gap:4px">'
+      + (high>0?'<span class="lv-imp imp-high">★★★' + high + '</span>':'')
+      + (mid>0?'<span class="lv-imp imp-mid">★★☆' + mid + '</span>':'')
+      + '</div></div></div>';
+  });
+  html += '</div>';
+  main.innerHTML = html;
+}
+
+function selectLevel(lv) {
+  selectedLevel = lv;
+  viewingArticle = null;
+  render();
+}
+
+function renderLevelModal(main) {
+  var meta = LEVEL_META.find(function(m){return m.lv===selectedLevel});
+  var guides = GUIDES.filter(function(g){return g.level===selectedLevel});
+  var high = guides.filter(function(g){return g.importance===IMPORTANCE.high}).length;
+  var mid = guides.filter(function(g){return g.importance===IMPORTANCE.mid}).length;
+  var html = '<button class="header-back" onclick="selectedLevel=null;render()">← マップに戻る</button>'
+    + '<div class="modal-header" style="margin-top:8px">'
+    + '<span class="icon">' + (meta?meta.icon:'') + '</span>'
+    + '<div><h3>Lv.' + selectedLevel + ' ' + (meta?meta.title:'') + '</h3>'
+    + '<div class="sub">' + guides.length + '記事 ' + (high>0?'★★★'+high+' ':'' ) + (mid>0?'★★☆'+mid:'') + '</div></div></div>'
+    + '<div class="modal-articles">';
+  guides.forEach(function(g) {
+    var impClass = g.importance===IMPORTANCE.high ? 'imp-high' : (g.importance===IMPORTANCE.mid ? 'imp-mid' : '');
+    html += '<div class="modal-article" onclick="openArticle(\'' + g.slug + '\')">'
+      + '<div class="art-title">' + g.title + '</div>'
+      + '<div class="art-desc">' + g.desc + '</div>'
+      + '<span class="lv-imp ' + impClass + '" style="margin-top:4px;display:inline-block">' + g.importance + '</span></div>';
+  });
+  html += '</div>';
+  main.innerHTML = html;
+}
+
+function openArticle(slug) {
+  viewingArticle = slug;
+  render();
+}
+
+function renderArticle(main) {
+  var guide = GUIDES.find(function(g){return g.slug===viewingArticle});
+  if (!guide) { viewingArticle=null; selectedLevel=null; render(); return; }
+  var impClass = guide.importance===IMPORTANCE.high ? 'imp-high' : (guide.importance===IMPORTANCE.mid ? 'imp-mid' : '');
+  var meta = LEVEL_META.find(function(m){return m.lv===guide.level});
+  main.innerHTML = '<button class="header-back" onclick="viewingArticle=null;render()">← レベル一覧へ</button>'
+    + '<div style="margin-top:8px">'
+    + '<span class="art-imp ' + impClass + '" style="background:' + (guide.importance===IMPORTANCE.high?'rgba(251,113,133,.15)':'rgba(251,191,36,.15)') + ';color:' + (guide.importance===IMPORTANCE.high?'var(--rose)':'var(--amber)') + '">重要度：' + guide.importance + '</span>'
+    + '<span style="font-size:10px;color:var(--muted);margin-left:6px">Lv.' + guide.level + ' ' + (meta?meta.icon:'') + '</span></div>'
+    + '<div class="article-header"><h1>' + guide.title + '</h1>'
+    + '<div class="sub">' + guide.desc + '</div>'
+    + '<div class="art-tags">' + guide.tags.map(function(t){return '<span class="art-tag">🏷 ' + t + '</span>'}).join("") + '</div></div>'
+    + '<div class="parchment">' + guide.content + '</div>';
+}
+
+render();
+</script>
+</body>
+</html>

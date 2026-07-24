@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>危険物取扱者・クエスト 〜爆炎魔導書ライブラリ〜</title>
+<style>
+/* === boki-3 globals.css 完全移植 === */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800;900&display=swap');
+
+:root {
+  --background: #090d16;
+  --foreground: #f8fafc;
+  --primary: #4f46e5;
+  --primary-hover: #6366f1;
+  --sepia-bg: #faf6eb;
+  --sepia-text: #433422;
+  --sepia-border: #e6dac6;
+  --cyan: #22d3ee;
+  --amber: #fbbf24;
+  --rose: #fb7185;
+  --emerald: #34d399;
+  --indigo: #818cf8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #090d16;
+  color: #f8fafc;
+  font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* 魔法のダイナミック背景 */
+@keyframes magic-bg {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-magic-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  background: linear-gradient(-45deg, #090d16, #111827, #1e1b4b, #0f172a);
+  background-size: 400% 400%;
+  animation: magic-bg 20s ease infinite;
+}
+
+/* すりガラス（glassmorphism） */
+.glass-panel {
+  background: rgba(11, 16, 28, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
+}
+
+/* ヘッダー */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  border-bottom: 1px solid rgba(251, 113, 133, 0.2);
+  user-select: none;
+}
+.header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--rose), var(--amber));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 900;
+  color: #090d16;
+  box-shadow: 0 0 12px rgba(251, 113, 133, 0.2);
+}
+.logo-main { font-size: 15px; font-weight: 900; color: var(--rose); letter-spacing: .05em; }
+.logo-sub { font-size: 9px; color: #6b7a99; letter-spacing: .12em; font-weight: 700; display: block; margin-top: -2px; }
+.nav { display: flex; gap: 8px; align-items: center; }
+.nav a {
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: .15s;
+}
+.nav a:hover { color: #fff; background: rgba(255,255,255,.06); }
+
+/* 2カラムレイアウト */
+.layout {
+  flex: 1;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 32px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+@media (min-width: 768px) { .layout { flex-direction: row; } }
+.main { flex: 1; min-width: 0; }
+.sidebar { width: 100%; }
+@media (min-width: 768px) { .sidebar { width: 320px; flex-shrink: 0; } }
+
+/* パンくず */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.breadcrumb a {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #6b7a99;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: .15s;
+}
+.breadcrumb a:hover { color: #e2e8f0; }
+.lv-badge {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--amber);
+  background: rgba(251,191,36,.1);
+  border: 1px solid rgba(251,191,36,.2);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+/* 記事ヘッダー */
+.article-header {
+  border-bottom: 1px solid rgba(30,41,59,.8);
+  padding-bottom: 12px;
+  margin-bottom: 24px;
+}
+.article-header h1 {
+  font-size: clamp(22px, 3.5vw, 32px);
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+.article-header p { font-size: 14px; color: #6b7a99; line-height: 1.6; }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.tag {
+  font-size: 10px;
+  font-weight: 800;
+  color: #6b7a99;
+  background: rgba(15,23,42,.8);
+  border: 1px solid rgba(30,41,59,.8);
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* 羊皮紙 */
+.parchment {
+  background: var(--sepia-bg);
+  color: var(--sepia-text);
+  border-radius: 24px;
+  padding: clamp(20px, 4vw, 32px);
+  border: 2px solid var(--sepia-border);
+  box-shadow: 0 8px 32px rgba(0,0,0,.3);
+  line-height: 1.9;
+  font-size: 15px;
+  position: relative;
+  overflow: hidden;
+}
+.parchment::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c4b998' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  pointer-events: none;
+}
+.parchment h2 { font-size: 20px; font-weight: 800; margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--sepia-border); }
+.parchment h3 { font-size: 17px; font-weight: 700; margin: 20px 0 10px; }
+.parchment p { margin: 10px 0; }
+.parchment ul, .parchment ol { margin: 8px 0; padding-left: 20px; }
+.parchment li { margin: 4px 0; }
+.parchment strong { color: #221a0e; }
+.parchment blockquote {
+  border-left: 3px solid #c4b998;
+  margin: 12px 0;
+  padding: 8px 16px;
+  background: rgba(196,185,152,.15);
+  border-radius: 0 8px 8px 0;
+  font-style: italic;
+}
+
+/* サイドパネル（boki-3のglass-panel継承） */
+.side-panel {
+  background: rgba(11, 16, 28, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
+  border-radius: 24px;
+  padding: 20px;
+  transition: transform .3s, box-shadow .3s;
+}
+.side-panel:hover { transform: translateY(-2px); box-shadow: 0 14px 50px -10px rgba(0,0,0,.6); }
+.side-panel h3 {
+  font-size: 12px;
+  font-weight: 900;
+  color: #6b7a99;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(30,41,59,.5);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.side-panel p { font-size: 13px; color: #94a3b8; line-height: 1.7; }
+
+/* プロフィール */
+.profile { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid rgba(30,41,59,.5); margin-bottom: 12px; }
+.profile-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(30,41,59,.8);
+  border: 1px solid rgba(251,113,133,.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.profile-role { font-size: 10px; font-weight: 800; color: #6b7a99; text-transform: uppercase; letter-spacing: .1em; }
+.profile-name { font-size: 14px; font-weight: 900; color: #fff; }
+
+/* 分野リスト */
+.field-list { display: flex; flex-direction: column; gap: 6px; }
+.field-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(30,41,59,.8);
+  background: rgba(15,23,42,.6);
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: .15s;
+  width: 100%;
+}
+.field-btn:hover { border-color: var(--indigo); color: #e2e8f0; background: rgba(15,23,42,.9); }
+.field-btn.active { border-color: var(--cyan); color: var(--cyan); background: rgba(34,211,238,.08); }
+
+/* 一覧カード */
+.guide-list { display: flex; flex-direction: column; gap: 8px; }
+.guide-card {
+  border: 1px solid rgba(30,41,59,.8);
+  border-radius: 16px;
+  padding: 16px;
+  background: rgba(15,23,42,.5);
+  text-decoration: none;
+  color: inherit;
+  transition: .15s;
+  cursor: pointer;
+  display: block;
+}
+.guide-card:hover { border-color: var(--indigo); background: rgba(15,23,42,.8); }
+.guide-card .title { font-size: 14px; font-weight: 800; color: #e2e8f0; margin-bottom: 4px; }
+.guide-card .desc { font-size: 11px; color: #6b7a99; line-height: 1.5; }
+.guide-card .lv { font-size: 10px; font-weight: 800; margin-top: 6px; }
+
+/* カテゴリーグループ */
+.cat-list { display: flex; flex-direction: column; gap: 8px; }
+.cat-item {
+  font-size: 13px;
+  font-weight: 800;
+  padding: 10px 14px;
+  border: 1px solid;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* 切り替えタブ */
+.view-toggle { display: flex; gap: 4px; margin-bottom: 16px; padding: 4px; background: rgba(15,23,42,.6); border: 1px solid rgba(30,41,59,.8); border-radius: 10px; }
+.view-btn { flex: 1; padding: 8px; border: none; border-radius: 6px; background: transparent; color: #6b7a99; font-size: 11px; font-weight: 700; cursor: pointer; transition: .15s; }
+.view-btn.active { background: rgba(34,211,238,.12); color: var(--cyan); }
+
+/* レベルグリッド */
+.level-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+.level-card {
+  border: 1px solid rgba(30,41,59,.8);
+  border-radius: 12px;
+  padding: 14px;
+  background: rgba(15,23,42,.5);
+  text-decoration: none;
+  color: inherit;
+  transition: .15s;
+  cursor: pointer;
+  display: block;
+  text-align: center;
+}
+.level-card:hover { border-color: var(--rose); background: rgba(15,23,42,.8); }
+.level-card .lv-num { font-size: 22px; font-weight: 900; color: var(--rose); }
+.level-card .lv-title { font-size: 11px; color: #94a3b8; margin-top: 2px; line-height: 1.4; }
+.level-card .lv-count { font-size: 9px; color: #6b7a99; margin-top: 4px; }
+
+/* 重要度バッジ */
+.imp-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 800; margin-bottom: 6px; }
+.imp-high { background: rgba(251,113,133,.15); color: var(--rose); }
+.imp-mid { background: rgba(251,191,36,.15); color: var(--amber); }
+.guide-card .imp-badge { font-size: 9px; padding: 2px 6px; margin-top: 4px; }
+
+/* フッター */
+footer {
+  text-align: center;
+  padding: 24px;
+  font-size: 11px;
+  color: #475569;
+  border-top: 1px solid rgba(255,255,255,.03);
+}
+</style>
+</head>
+<body>
+<div class="animate-magic-bg"></div>
+
+<!-- ヘッダー（boki-3完全準拠） -->
+<header class="header glass-panel">
+  <div class="header-inner">
+    <a href="#" class="logo" onclick="showTop()">
+      <div class="logo-icon">🔥</div>
+      <div>
+        <span class="logo-main">KIKENBUTSU QUEST</span>
+        <span class="logo-sub">爆炎魔導書ライブラリ</span>
+      </div>
+    </a>
+    <nav class="nav">
+      <a href="#" onclick="showTop()">魔導書一覧</a>
+    </nav>
+  </div>
+</header>
+
+<!-- メインコンテンツ -->
+<div style="display:flex;flex-direction:column;min-height:calc(100vh - 64px)">
+  <div class="layout">
+    <main class="main" id="mainContent"></main>
+    <aside class="sidebar">
+      <!-- プロフィール（boki-3準拠） -->
+      <div class="side-panel" style="margin-bottom:16px">
+        <div class="profile">
+          <div class="profile-avatar">🧯</div>
+          <div>
+            <div class="profile-role">爆炎魔導書管理人</div>
+            <div class="profile-name">エンジニア 雅</div>
+          </div>
+        </div>
+        <p>
+          「危険物取扱者の暗記がつらすぎて挫折した」という経験から生まれた、RPGで遊びながら合格を目指すアプリと、その知識をまとめた爆炎魔導書です。
+        </p>
+      </div>
+
+      <!-- 分野一覧 -->
+      <div class="side-panel" style="margin-bottom:16px">
+        <h3>📂 分野一覧</h3>
+        <div class="field-list" id="fieldList"></div>
+      </div>
+
+      <!-- 危険物カテゴリーグループ（boki-3の勘定科目グループ相当） -->
+      <div class="side-panel">
+        <h3>🔥 危険物の分類</h3>
+        <div class="cat-list">
+          <div class="cat-item" style="border-color:rgba(251,113,133,.2);color:var(--rose);background:rgba(251,113,133,.06)"><span>第1類：酸化性固体</span><span style="opacity:.5">🧪</span></div>
+          <div class="cat-item" style="border-color:rgba(251,191,36,.2);color:var(--amber);background:rgba(251,191,36,.06)"><span>第2類：可燃性固体</span><span style="opacity:.5">🔥</span></div>
+          <div class="cat-item" style="border-color:rgba(34,211,238,.2);color:var(--cyan);background:rgba(34,211,238,.06)"><span>第3類：自然発火・禁水</span><span style="opacity:.5">💧</span></div>
+          <div class="cat-item" style="border-color:rgba(251,113,133,.3);color:var(--rose);background:rgba(251,113,133,.1);font-weight:900"><span>🔥 第4類：引火性液体</span><span style="opacity:.7">⛽</span></div>
+          <div class="cat-item" style="border-color:rgba(52,211,153,.2);color:var(--emerald);background:rgba(52,211,153,.06)"><span>第5類：自己反応性</span><span style="opacity:.5">💥</span></div>
+          <div class="cat-item" style="border-color:rgba(129,140,248,.2);color:var(--indigo);background:rgba(129,140,248,.06)"><span>第6類：酸化性液体</span><span style="opacity:.5">🧪</span></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- フッター（boki-3準拠） -->
+  <footer>
+    <p style="font-weight:800;letter-spacing:.12em;color:#475569">KIKENBUTSU QUEST 🧭 DEMO</p>
+    <p style="font-size:10px;color:#334155;margin-top:4px">© 2026 Kikenbutsu Quest Project. Designed for Hazardous Materials Engineers.</p>
+  </footer>
+</div>
+
+<script>
+// === 重要度 ===
+var HIGH = "★★★", MID = "★★☆";
+
+// === 危険物データ（boki-3のガイドデータ準拠） ===
+const GUIDES = [
+  // ★★★ 最重要（毎回出題）
+  {slug:"gasoline",level:7,importance:HIGH,title:"ガソリンの性質【最重要】",desc:"引火点-40℃・静電気危険・指定数量200L",tags:["第4類","ガソリン"],content:`
+<p class="imp-high" style="display:inline-block;padding:4px 10px;border-radius:6px;font-size:12px">🎯 毎回必ず1問は出る最重要物質</p>
+
+<h2>ガソリンってどんな液体？</h2>
+<p>ガソリンは車の燃料として身近な液体ですが、<strong>最も危険な第4類危険物</strong>です。引火点が-40℃と極めて低く、真冬でも火花1つで簡単に燃え上がります。</p>
+
+<h2>📊 ガソリンの数値カルテ（暗記必須）</h2>
+<table style="width:100%;border-collapse:collapse;margin:10px 0">
+<tr style="background:rgba(0,0,0,.08)"><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">項目</td><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">数値</td><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">覚え方</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">引火点</td><td style="padding:6px 10px;border:1px solid #c4b998">-40℃以下</td><td style="padding:6px 10px;border:1px solid #c4b998">マイナスシイレイ</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">発火点</td><td style="padding:6px 10px;border:1px solid #c4b998">約300℃</td><td style="padding:6px 10px;border:1px solid #c4b998">サンビャク</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">燃焼範囲</td><td style="padding:6px 10px;border:1px solid #c4b998">1.4%〜7.6%</td><td style="padding:6px 10px;border:1px solid #c4b998">イチヨンカラナナロク</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">比重</td><td style="padding:6px 10px;border:1px solid #c4b998">0.5〜0.8</td><td style="padding:6px 10px;border:1px solid #c4b998">水(1.0)より軽い</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">蒸気比重</td><td style="padding:6px 10px;border:1px solid #c4b998">3〜4</td><td style="padding:6px 10px;border:1px solid #c4b998">空気(1)の3倍重い</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">指定数量</td><td style="padding:6px 10px;border:1px solid #c4b998">200L</td><td style="padding:6px 10px;border:1px solid #c4b998">ニイマルマル（最少）</td></tr>
+</table>
+
+<h2>🔥 静電気に注意！</h2>
+<p>ガソリンは<strong>電気を通しにくい</strong>性質があるため、流す・かき混ぜる・ろ過するだけで静電気がたまります。</p>
+<p>想像してください：冬の乾燥した日、セーターを脱ぐときパチッと静電気が飛びますよね？あれがガソリンのそばで起きたら…一瞬で火災です。</p>
+<ul><li>✅ 給油時は<strong>エンジン停止</strong></li><li>✅ 金属容器には<strong>接地（アース）</strong></li><li>⚠️ ポリタンクは特に危険</li></ul>
+
+<h2>💨 蒸気はヘビのように地面を這う</h2>
+<p>ガソリンの蒸気は空気の<strong>3倍以上重い</strong>（蒸気比重3〜4）。つまり、こぼれたガソリンから出る蒸気は<strong>床面をヘビのように這って広がります</strong>。遠く離れた場所の火源に引火することもあるので注意。</p>
+
+<blockquote>💡 最重要暗記3点セット：「200L（指定数量）」「-40℃（引火点）」「1.4%〜7.6%（燃焼範囲）</blockquote>`},
+  {slug:"gasoline-fire",level:7,importance:HIGH,title:"ガソリン火災の消火【最重要】",desc:"B火災に水は絶対禁忌・理由も説明必須",tags:["第4類","消火"],content:`
+<p class="imp-high" style="display:inline-block;padding:4px 10px;border-radius:6px;font-size:12px">🎯 「油火災に水は禁忌」はほぼ100%出る</p>
+
+<h2>🔥 ガソリン火災の3つの特徴</h2>
+<ol><li>引火点-40℃以下→<strong>真夏も真冬も常に危険</strong></li><li>蒸気が床に滞留→遠くの火源からでも着火</li><li>静電気放電で簡単に着火</li></ol>
+
+<h2>🧯 適切な消火剤（3種類を暗記）</h2>
+<table style="width:100%;border-collapse:collapse;margin:10px 0">
+<tr style="background:rgba(0,0,0,.08)"><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">消火器</td><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">特徴</td><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">使える火災</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">粉末</td><td style="padding:6px 10px;border:1px solid #c4b998">即効性No.1</td><td style="padding:6px 10px;border:1px solid #c4b998">ABCすべて</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">泡</td><td style="padding:6px 10px;border:1px solid #c4b998">油面を被覆・窒息</td><td style="padding:6px 10px;border:1px solid #c4b998">B火災に最適</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">CO2</td><td style="padding:6px 10px;border:1px solid #c4b998">窒息効果・絶縁性高い</td><td style="padding:6px 10px;border:1px solid #c4b998">B・C火災</td></tr>
+</table>
+
+<h2>⛔ 絶対禁止：水をかけるな！</h2>
+<p>想像してください。フライパンに油を入れて熱しているところに、水を一滴落とすと…油がハネて周りに飛び散りますよね？ガソリン火災に水をかけるとこれが大規模に起こり、<strong>火災が拡大します</strong>。</p>
+<p>理由：ガソリンは<strong>水より軽い（比重0.5〜0.8）</strong>ので、水をかけると油が水面に浮いて拡散します。</p>
+<blockquote>💡 「B火災→泡か粉末」「水は絶対禁忌」は試験の鉄板。理由（水より軽いから浮いて拡散）もセットで覚えよう。</blockquote>`},
+  {slug:"flashpoint",level:7,importance:HIGH,title:"引火点順位の完全暗記【最重要】",desc:"ガソリン＜アルコール＜灯油＜軽油＜重油",tags:["第4類","引火点"],content:`
+<p class="imp-high" style="display:inline-block;padding:4px 10px;border-radius:6px;font-size:12px">🎯 第4類の引火点順位は試験の超頻出</p>
+
+<h2>📊 第4類の引火点順位（完全暗記！）</h2>
+<p>この順位は試験で<strong>毎回必ずどこかで問われる</strong>最重要暗記項目です。語呂で覚えましょう。</p>
+
+<table style="width:100%;border-collapse:collapse;margin:10px 0">
+<tr style="background:rgba(0,0,0,.08)"><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">品目</td><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">引火点</td><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">危険度</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">ガソリン</td><td style="padding:6px 10px;border:1px solid #c4b998">-40℃以下</td><td style="padding:6px 10px;border:1px solid #c4b998">🔥🔥🔥 常時危険</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">アルコール</td><td style="padding:6px 10px;border:1px solid #c4b998">13℃</td><td style="padding:6px 10px;border:1px solid #c4b998">🔥🔥 冬は要注意</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">灯油</td><td style="padding:6px 10px;border:1px solid #c4b998">40℃以上</td><td style="padding:6px 10px;border:1px solid #c4b998">🔥 加熱注意</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">軽油</td><td style="padding:6px 10px;border:1px solid #c4b998">45℃以上</td><td style="padding:6px 10px;border:1px solid #c4b998">🔥 加熱注意</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">重油</td><td style="padding:6px 10px;border:1px solid #c4b998">60℃以上</td><td style="padding:6px 10px;border:1px solid #c4b998">😌 比較的安全</td></tr>
+</table>
+
+<h2>🎵 語呂合わせで覚えよう</h2>
+<p><strong>「ガーアル・トウ・ケイ・ジュウ」</strong></p>
+<p>ガ＝ガソリン(-40℃) → ア＝アルコール(13℃) → ル＝(略) → トウ＝灯油(40℃) → ケイ＝軽油(45℃) → ジュウ＝重油(60℃以上)</p>
+
+<h2>🧠 発火点もセットで暗記</h2>
+<ul><li>ガソリン：約300℃</li><li>アルコール：約400℃（引火点より発火点の方が高い）</li><li>灯油：約250℃</li><li>軽油：約220℃</li></ul>
+<p>引火点と発火点の違いをおさらい：<strong>引火点＝火を近づけたら燃える温度</strong>、<strong>発火点＝自然に燃え出す温度</strong>。</p>
+
+<blockquote>💡 ガソリン(-40℃) ＜ アルコール(13℃) ＜ 灯油(40℃) ＜ 軽油(45℃) ＜ 重油(60℃以上)。「ガーアル・トウ・ケイ・ジュウ」で暗記！</blockquote>`},
+  {slug:"gasoline-num",level:7,importance:HIGH,title:"ガソリンの数値完全暗記【最重要】",desc:"200L・-40℃・1.4%〜7.6%",tags:["第4類","数値"],content:`
+<p class="imp-high" style="display:inline-block;padding:4px 10px;border-radius:6px;font-size:12px">🎯 ガソリンの数値問題は確実に得点しよう</p>
+
+<h2>📊 ガソリン数値完全マスター</h2>
+<p>ここに出てくる数値は「選択肢の中から正しいものを選ぶ」形式で毎回出ます。表で完全暗記！</p>
+
+<table style="width:100%;border-collapse:collapse;margin:10px 0">
+<tr style="background:rgba(0,0,0,.08)"><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">項目</td><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">数値</td><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">語呂</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">引火点</td><td style="padding:6px 10px;border:1px solid #c4b998">-40℃</td><td style="padding:6px 10px;border:1px solid #c4b998">マイナスシイレイ</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">発火点</td><td style="padding:6px 10px;border:1px solid #c4b998">約300℃</td><td style="padding:6px 10px;border:1px solid #c4b998">サンビャク</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">燃焼範囲</td><td style="padding:6px 10px;border:1px solid #c4b998">1.4%〜7.6%</td><td style="padding:6px 10px;border:1px solid #c4b998">イチヨンカラナナロク</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">比重</td><td style="padding:6px 10px;border:1px solid #c4b998">0.5〜0.8</td><td style="padding:6px 10px;border:1px solid #c4b998">水(1)より軽い</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">蒸気比重</td><td style="padding:6px 10px;border:1px solid #c4b998">3〜4</td><td style="padding:6px 10px;border:1px solid #c4b998">空気の3倍</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">指定数量</td><td style="padding:6px 10px;border:1px solid #c4b998">200L</td><td style="padding:6px 10px;border:1px solid #c4b998">ニイマルマル</td></tr>
+</table>
+
+<h2>🎯 よく出る比較問題</h2>
+<ul><li><strong>ガソリン(200L) vs 重油(2,000L)</strong> → 10倍差！</li><li><strong>ガソリン(-40℃) vs 灯油(40℃)</strong> → なんと80℃差！</li><li><strong>ガソリン(1.4%〜7.6%) vs 水素(4%〜75%)</strong> → 水素の方が格段に広い</li></ul>
+
+<blockquote>💡 最重要3点セットをおさえよう：「<strong>200L</strong>（ニイマルマル）」「<strong>-40℃</strong>（マイナスシイレイ）」「<strong>1.4%〜7.6%</strong>（イチヨンカラナナロク）」</blockquote>`},
+  {slug:"storage",level:10,importance:HIGH,title:"貯蔵所の構造基準【最重要】",desc:"防油堤・耐火構造・換気",tags:["施設","基準"],content:`
+<p class="imp-high" style="display:inline-block;padding:4px 10px;border-radius:6px;font-size:12px">🎯 法令分野で最も出題数が多い！毎回2〜3問出る</p>
+
+<h2>🏠 屋内貯蔵所の5つのルール</h2>
+<p>建物の中に危険物を置く場合の最低限のルールです。</p>
+<table style="width:100%;border-collapse:collapse;margin:10px 0">
+<tr style="background:rgba(0,0,0,.08)"><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">ルール</td><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">理由</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">不燃材料で建てる</td><td style="padding:6px 10px;border:1px solid #c4b998">火事になっても燃え広がらないように</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">床は危険物が浸透しない構造</td><td style="padding:6px 10px;border:1px solid #c4b998">床に染み込んで気づかずに引火を防ぐ</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">換気設備を設置</td><td style="padding:6px 10px;border:1px solid #c4b998">可燃性蒸気がたまらないように</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">主要構造部を耐火構造に</td><td style="padding:6px 10px;border:1px solid #c4b998">建物が倒壊しないように</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">出入口に防火設備</td><td style="padding:6px 10px;border:1px solid #c4b998">火災の拡大を防ぐ</td></tr>
+</table>
+
+<h2>⛽ 屋外タンク貯蔵所</h2>
+<p>あのガソリンスタンドの地下にある巨大タンクをイメージしてください。</p>
+<ul><li>タンク周囲に<strong>防油堤</strong>（高さ50cm以上）→ 漏れても外に出さない壁</li><li>防油堤内に<strong>排水設備</strong></li><li>タンクは<strong>厚さ3.2mm以上の鋼板</strong></li><li>腐食防止のための<strong>防食措置</strong></li></ul>
+
+<h2>🏪 給油取扱所（ガソリンスタンド）</h2>
+<ul><li>✅ エンジンを停止して給油</li><li>✅ 静電気除去設備（接地）</li><li>✅ 携行缶への給油は<strong>ノズルを缶に接触</strong>させて静電気を逃がす</li><li>⚠️ 携行缶は金属製が望ましい（ポリタンクは静電気危険）</li></ul>
+
+<blockquote>💡 「防油堤」「不燃材料」「換気設備」の3語がキーワード。この3つを押さえておけば半分は解ける！</blockquote>`},
+  {slug:"combustion",level:4,importance:HIGH,title:"燃焼の3要素【最重要】",desc:"可燃物・酸素・点火源をイメージで理解",tags:["化学","燃焼"],content:`
+<p class="imp-high" style="display:inline-block;padding:4px 10px;border-radius:6px;font-size:12px">🎯 基礎化学の最初に必ず出る！毎回1問</p>
+
+<h2>🔥 燃焼の3要素＝火事の3つの条件</h2>
+<p>キャンプファイヤーを想像してみてください。火を起こすには3つのものが必要ですよね？</p>
+
+<table style="width:100%;border-collapse:collapse;margin:10px 0">
+<tr style="background:rgba(0,0,0,.08)"><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">要素</td><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">イメージ</td><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">消し方</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">🔥 可燃物</td><td style="padding:6px 10px;border:1px solid #c4b998">薪・ガソリン・紙</td><td style="padding:6px 10px;border:1px solid #c4b998">除去（燃えるものをどかす）</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">💨 酸素</td><td style="padding:6px 10px;border:1px solid #c4b998">空気中の酸素</td><td style="padding:6px 10px;border:1px solid #c4b998">窒息（泡やシートで覆う）</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">✨ 点火源</td><td style="padding:6px 10px;border:1px solid #c4b998">火花・高温・静電気</td><td style="padding:6px 10px;border:1px solid #c4b998">冷却（水で温度を下げる）</td></tr>
+</table>
+
+<p>この3つが揃うと火がつきます。逆に言えば、<strong>どれか1つを取り除けば火は消える</strong>。これが消火の基本原理です。</p>
+
+<h2>📏 燃焼範囲（爆発範囲）とは？</h2>
+<p>「燃えるガスが<strong>薄すぎてもダメ、濃すぎてもダメ</strong>」という濃度の範囲です。</p>
+<ul><li>ガソリン：<strong>1.4%〜7.6%</strong>（空気中の体積割合）</li><li>水素：4.0%〜75%（めちゃくちゃ広い！危険！）</li><li>アセチレン：2.5%〜80%</li></ul>
+<p>範囲が広いほど、<strong>少し漏れただけでも引火する可能性が高い</strong>ので危険です。</p>
+
+<h2>🌡 引火点 vs 発火点</h2>
+<ul><li><strong>引火点</strong>：ライターで火をつけたら燃える温度</li><li><strong>発火点</strong>：何もしなくても自然に燃え出す温度</li></ul>
+<p>引火点の方が発火点より<strong>低い</strong>のが普通です。</p>
+
+<blockquote>💡 「燃焼の3要素＝可燃物・酸素・点火源」は毎回必出。消火の3原理（窒息・冷却・除去）とセットで覚えよう！</blockquote>`},
+  {slug:"classify",level:4,importance:HIGH,title:"危険物の6分類【最重要】",desc:"第1類〜第6類をイメージで一気に暗記",tags:["化学","分類"],content:`
+<p class="imp-high" style="display:inline-block;padding:4px 10px;border-radius:6px;font-size:12px">🎯 各類の特徴＋保存方法が頻出</p>
+
+<h2>📋 危険物6分類 早見表</h2>
+<table style="width:100%;border-collapse:collapse;margin:10px 0">
+<tr style="background:rgba(0,0,0,.08)"><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">類</td><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">名前</td><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">代表例</td><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">ポイント</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">第1類</td><td style="padding:6px 10px;border:1px solid #c4b998">酸化性固体</td><td style="padding:6px 10px;border:1px solid #c4b998">塩素酸カリウム</td><td style="padding:6px 10px;border:1px solid #c4b998">酸素を出す固体</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">第2類</td><td style="padding:6px 10px;border:1px solid #c4b998">可燃性固体</td><td style="padding:6px 10px;border:1px solid #c4b998">マグネシウム</td><td style="padding:6px 10px;border:1px solid #c4b998">燃えやすい固体</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">第3類</td><td style="padding:6px 10px;border:1px solid #c4b998">自然発火・禁水</td><td style="padding:6px 10px;border:1px solid #c4b998">ナトリウム</td><td style="padding:6px 10px;border:1px solid #c4b998">⚠️ Naは灯油中！</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998;background:rgba(251,113,133,.08);font-weight:900">第4類</td><td style="padding:6px 10px;border:1px solid #c4b998;background:rgba(251,113,133,.08);font-weight:900">引火性液体</td><td style="padding:6px 10px;border:1px solid #c4b998;background:rgba(251,113,133,.08);font-weight:900">ガソリン</td><td style="padding:6px 10px;border:1px solid #c4b998;background:rgba(251,113,133,.08);font-weight:900">キミの受験対象！</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">第5類</td><td style="padding:6px 10px;border:1px solid #c4b998">自己反応性</td><td style="padding:6px 10px;border:1px solid #c4b998">硝酸エステル</td><td style="padding:6px 10px;border:1px solid #c4b998">衝撃で爆発</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">第6類</td><td style="padding:6px 10px;border:1px solid #c4b998">酸化性液体</td><td style="padding:6px 10px;border:1px solid #c4b998">硝酸</td><td style="padding:6px 10px;border:1px solid #c4b998">酸素を出す液体</td></tr>
+</table>
+
+<h2>⚠️ 第3類の保存方法は超頻出！</h2>
+<ul><li><strong>ナトリウム(Na)</strong>：空気中の水分と反応する → <strong>灯油中</strong>に保存</li>
+<li><strong>黄リン</strong>：空気中で自然発火する → <strong>水中</strong>に保存</li></ul>
+<p>「ナトリウムは油（灯油）の中」「黄リンは水の中」とセットで覚えましょう。</p>
+
+<blockquote>💡 「第3類の保存方法（Naは灯油中・黄リンは水中）」は毎年出題の定番。絶対に間違えないように！</blockquote>`},
+  {slug:"extinguish",level:5,importance:HIGH,title:"消火理論と消火剤【最重要】",desc:"3原理＋危険物別の消火器早見表",tags:["化学","消火"],content:`
+<p class="imp-high" style="display:inline-block;padding:4px 10px;border-radius:6px;font-size:12px">🎯 「油火災に水は禁忌」が毎回必出</p>
+
+<h2>🧯 消火の3原理</h2>
+<table style="width:100%;border-collapse:collapse;margin:10px 0">
+<tr style="background:rgba(0,0,0,.08)"><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">原理</td><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">方法</td><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">例</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">💨 窒息</td><td style="padding:6px 10px;border:1px solid #c4b998">酸素を遮断</td><td style="padding:6px 10px;border:1px solid #c4b998">泡・CO2・シート</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">❄️ 冷却</td><td style="padding:6px 10px;border:1px solid #c4b998">温度を下げる</td><td style="padding:6px 10px;border:1px solid #c4b998">水をかける</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">🧹 除去</td><td style="padding:6px 10px;border:1px solid #c4b998">可燃物を取り除く</td><td style="padding:6px 10px;border:1px solid #c4b998">危険物を隔離</td></tr>
+</table>
+
+<h2>⛽ 危険物の種類と適切な消火剤（最重要）</h2>
+<table style="width:100%;border-collapse:collapse;margin:10px 0">
+<tr style="background:rgba(0,0,0,.08)"><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">火災の種類</td><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">OKな消火剤</td><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">NGなもの</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">🟡 B火災（油）</td><td style="padding:6px 10px;border:1px solid #c4b998">泡・粉末</td><td style="padding:6px 10px;border:1px solid #c4b998;color:var(--rose)"><strong>水は絶対NG！</strong></td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">🔴 金属火災</td><td style="padding:6px 10px;border:1px solid #c4b998">乾燥砂・粉末</td><td style="padding:6px 10px;border:1px solid #c4b998;color:var(--rose)"><strong>水は爆発する！</strong></td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">⚡ C火災（電気）</td><td style="padding:6px 10px;border:1px solid #c4b998">CO2・粉末</td><td style="padding:6px 10px;border:1px solid #c4b998">水は感電の危険</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">🪵 A火災（普通）</td><td style="padding:6px 10px;border:1px solid #c4b998">水・粉末</td><td style="padding:6px 10px;border:1px solid #c4b998">特に無し</td></tr>
+</table>
+
+<h2>📝 ABC火災の覚え方</h2>
+<ul><li><strong>A</strong>＝Ash（灰）＝普通火災（木・紙）</li><li><strong>B</strong>＝Barrel（たる）＝油火災</li><li><strong>C</strong>＝Current（電流）＝電気火災</li></ul>
+
+<blockquote>💡 「油火災(B)に水は禁忌」は毎回必出！理由（油は水に浮いて拡散する）もセットで答えよう。</blockquote>`},
+  {slug:"law-qty",level:1,importance:HIGH,title:"指定数量の完全暗記【最重要】",desc:"200L・400L・1,000L・2,000Lを完全暗記",tags:["法令","指定数量"],content:`
+<p class="imp-high" style="display:inline-block;padding:4px 10px;border-radius:6px;font-size:12px">🎯 指定数量は法令の基本中の基本！毎回出る</p>
+
+<h2>📊 指定数量一覧（完全暗記必須）</h2>
+<table style="width:100%;border-collapse:collapse;margin:10px 0">
+<tr style="background:rgba(0,0,0,.08)"><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">危険物</td><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">指定数量</td><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">特徴</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">ガソリン</td><td style="padding:6px 10px;border:1px solid #c4b998"><strong>200L</strong></td><td style="padding:6px 10px;border:1px solid #c4b998">最少＝最も危険！</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">アルコール類</td><td style="padding:6px 10px;border:1px solid #c4b998">400L</td><td style="padding:6px 10px;border:1px solid #c4b998">水溶性に注意</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">灯油・軽油</td><td style="padding:6px 10px;border:1px solid #c4b998"><strong>1,000L</strong></td><td style="padding:6px 10px;border:1px solid #c4b998">セットで覚える！</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">重油</td><td style="padding:6px 10px;border:1px solid #c4b998"><strong>2,000L</strong></td><td style="padding:6px 10px;border:1px solid #c4b998">最大＝比較的安全</td></tr>
+</table>
+
+<h2>🧮 倍数計算（年1回は出る）</h2>
+<p>異なる危険物を同じ場所に置く場合、それぞれ「<strong>貯蔵量÷指定数量</strong>」の<strong>合計が1以上</strong>なら許可が必要です。</p>
+<p><strong>例題</strong>：ガソリン100L(100÷200=<strong>0.5</strong>) ＋ 灯油600L(600÷1,000=<strong>0.6</strong>) = <strong>合計1.1 → 許可が必要！</strong></p>
+
+<h2>✅ 指定数量未満の場合</h2>
+<p>指定数量に満たない量の危険物を貯蔵する場合は、<strong>許可ではなく届出</strong>でよい。</p>
+
+<blockquote>💡 「200L（ガソリン）」「1,000L（灯油・軽油）」「2,000L（重油）」の順番で覚えよう。ガソリンvs重油は10倍差！</blockquote>`},
+  {slug:"law-supervisor",level:2,importance:HIGH,title:"保安監督者制度【最重要】",desc:"選任要件と5つの職務を完全マスター",tags:["法令","保安監督"],content:`
+<p class="imp-high" style="display:inline-block;padding:4px 10px;border-radius:6px;font-size:12px">🎯 「免状交付者から選任」が穴埋めで頻出</p>
+
+<h2>👤 保安監督者って何？</h2>
+<p>危険物を取り扱う施設（製造所・貯蔵所・取扱所）には、<strong>必ず1人「保安監督者」を置かなければなりません</strong>。選ばれるのは<strong>危険物取扱者免状を持っている人</strong>だけです。</p>
+
+<h2>📋 選任できる人の条件</h2>
+<table style="width:100%;border-collapse:collapse;margin:10px 0">
+<tr style="background:rgba(0,0,0,.08)"><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">免状の種類</td><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">選任できる施設</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">甲種</td><td style="padding:6px 10px;border:1px solid #c4b998">すべての施設でOK</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">乙種</td><td style="padding:6px 10px;border:1px solid #c4b998">免状に書かれた類の危険物の施設のみ</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">丙種</td><td style="padding:6px 10px;border:1px solid #c4b998">給油取扱所（GS）のみ</td></tr>
+</table>
+
+<h2>🎯 保安監督者の5つの仕事</h2>
+<ol><li>危険物取扱い作業の<strong>監督</strong></li><li>施設・設備の<strong>定期点検</strong></li><li>従業員への<strong>教育訓練</strong></li><li>災害時の<strong>応急措置</strong>指揮</li><li>帳簿の<strong>管理・保存</strong></li></ol>
+
+<blockquote>💡 「保安監督者は危険物取扱者免状の交付を受けている者の中から選任する」→ 穴埋めでこの一文が出たらラッキー！暗記しておこう。</blockquote>`},
+  {slug:"law-penalty",level:2,importance:HIGH,title:"罰則と行政処分【最重要】",desc:"3年以下の懲役または300万円以下の罰金",tags:["法令","罰則"],content:`
+<p class="imp-high" style="display:inline-block;padding:4px 10px;border-radius:6px;font-size:12px">🎯 「3年/300万円」は鉄板中の鉄板！</p>
+
+<h2>⚖️ 罰則一覧（毎回出題）</h2>
+<table style="width:100%;border-collapse:collapse;margin:10px 0">
+<tr style="background:rgba(0,0,0,.08)"><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">違反内容</td><td style="padding:6px 10px;border:1px solid #c4b998;font-weight:700">罰則</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">無許可で危険物を貯蔵・取扱い</td><td style="padding:6px 10px;border:1px solid #c4b998"><strong>3年以下の懲役 or 300万円以下の罰金</strong></td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">危険物を流出させた</td><td style="padding:6px 10px;border:1px solid #c4b998">上と同じ！</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">保安監督者を置かなかった</td><td style="padding:6px 10px;border:1px solid #c4b998"><strong>過料</strong>（行政上の制裁）</td></tr>
+<tr><td style="padding:6px 10px;border:1px solid #c4b998">完成検査を受けずに使用</td><td style="padding:6px 10px;border:1px solid #c4b998">罰則対象</td></tr>
+</table>
+
+<h2>📋 行政処分4種類</h2>
+<ol><li>許可の<strong>取消し</strong></li><li>使用の<strong>停止命令</strong></li><li>施設の<strong>改善命令</strong></li><li>警告</li></ol>
+
+<h2>🧠 ここがよく問われる！</h2>
+<ul><li><strong>罰金 vs 過料</strong>：罰金＝刑事罰（前科がつく）、過料＝行政上の制裁</li>
+<li><strong>3年と300万円は必ずセット</strong>：片方だけ変えてくる引っかけ問題に注意</li></ul>
+
+<blockquote>💡 「3年以下の懲役又は300万円以下の罰金」の<strong>数字だけは絶対に間違えない</strong>ように。これだけで1点取れる。</blockquote>`},
+  // ★★☆ 頻出
+  {slug:"kerosene",level:8,importance:MID,title:"灯油・軽油の性質",desc:"引火点40℃・1,000L",tags:["第4類","灯油"],content:`
+<ul><li>灯油：引火点40℃以上、指定数量1,000L</li><li>軽油：引火点45℃以上、指定数量1,000L</li></ul>
+<blockquote>💡 灯油と軽油の指定数量は同じ1,000L。</blockquote>`},
+  {slug:"heavy-oil",level:8,importance:MID,title:"重油の性質",desc:"引火点60℃・2,000L",tags:["第4類","重油"],content:`
+<ul><li>引火点：60℃以上（A重油70℃程度）</li><li>指定数量：2,000L</li><li>粘性の高い暗褐色</li></ul>
+<blockquote>💡 第4類で最も引火点が高い。</blockquote>`},
+  {slug:"alcohol",level:9,importance:MID,title:"アルコール類の性質",desc:"水溶性・引火点13℃",tags:["第4類","アルコール"],content:`
+<ul><li>引火点：13℃</li><li>指定数量：400L</li><li>水溶性（第4類で唯一）</li><li>消火は耐アルコール泡</li></ul>
+<blockquote>💡 「水溶性＝アルコール」は頻出。</blockquote>`},
+  {slug:"special",level:9,importance:MID,title:"第1・2・3・5・6類",desc:"他類のポイント",tags:["第1類","第3類"],content:`
+<ul><li>第1類：酸化性固体</li><li>第2類：可燃性固体</li><li>第3類：自然発火・禁水（Naは灯油中、黄リンは水中）</li><li>第5類：自己反応性</li><li>第6類：酸化性液体</li></ul>
+<blockquote>💡 Naと黄リンの保存方法は頻出。</blockquote>`},
+  {slug:"static",level:6,importance:MID,title:"静電気と危険物",desc:"帯電条件・対策",tags:["化学","静電気"],content:`
+<ul><li>発生条件：流動・撹拌・ろ過・乾燥</li><li>対策：接地・除電器・導電性容器・流速制限</li></ul>
+<blockquote>💡 静電気対策＝接地。</blockquote>`},
+  {slug:"heat",level:5,importance:MID,title:"熱の伝わり方",desc:"伝導・対流・放射",tags:["化学","熱"],content:`
+<ul><li>熱伝導：物体を通して</li><li>熱対流：空気・液体の移動</li><li>熱放射：電磁波</li></ul>
+<blockquote>💡 蒸気比重と滞留性は年1〜2回出題。</blockquote>`},
+  {slug:"combustion-chem",level:5,importance:MID,title:"完全燃焼と不完全燃焼",desc:"CO発生",tags:["化学","反応"],content:`
+<ul><li>完全燃焼：CO2+H2O</li><li>不完全燃焼：CO発生→中毒の危険</li><li>動植物油：自然発火リスク</li></ul>
+<blockquote>💡 不完全燃焼＝CO。</blockquote>`},
+  {slug:"law-type",level:1,importance:MID,title:"貯蔵所の6種類",desc:"種類と特徴",tags:["法令","貯蔵所"],content:`
+<ul><li>屋内・屋外タンク・地下タンク</li><li>簡易タンク・移動タンク・給油取扱所</li></ul>
+<blockquote>💡 地下タンクは防食措置。</blockquote>`},
+  {slug:"law-fire",level:3,importance:MID,title:"消防機関の役割",desc:"許可・検査",tags:["法令","消防"],content:`
+<ul><li>設置許可：市町村長</li><li>完成検査：合格で使用開始</li><li>立入検査あり</li></ul>
+<blockquote>💡 設置許可＝市町村長。</blockquote>`},
+  {slug:"law-inspect",level:3,importance:MID,title:"定期点検の周期",desc:"毎月・1年・10年",tags:["法令","点検"],content:`
+<ul><li>毎月1回：自主点検</li><li>1年以内：定期点検</li><li>10年に1回：タンク開放点検</li><li>帳簿保存：2年間</li></ul>
+<blockquote>💡 3つの周期は数字問題で頻出。</blockquote>`},
+];
+
+const FIELDS = [
+  {id:"high",label:"★★★ 最重要（毎回出題）",color:"var(--rose)"},
+  {id:"mid",label:"★★☆ 頻出",color:"var(--amber)"},
+];
+
+const LEVEL_META = [
+  {lv:1,icon:"📜",title:"法令・指定数量"},
+  {lv:2,icon:"⚖️",title:"保安監督と罰則"},
+  {lv:3,icon:"🏛️",title:"消防行政と点検"},
+  {lv:4,icon:"🔥",title:"燃焼と危険物分類"},
+  {lv:5,icon:"🧯",title:"消火と熱の科学"},
+  {lv:6,icon:"⚡",title:"物理・静電気"},
+  {lv:7,icon:"⛽",title:"ガソリン徹底攻略"},
+  {lv:8,icon:"🛢️",title:"灯油・軽油・重油"},
+  {lv:9,icon:"🧪",title:"アルコールと他類"},
+  {lv:10,icon:"🚨",title:"貯蔵所と基準"},
+];
+
+var currentView = 'field';
+
+function showTop() { currentView='field'; renderMain(); }
+
+function renderMain() {
+  var main = document.getElementById("mainContent");
+  var html = '<div class="breadcrumb" style="margin-bottom:20px"><a href="#">📚 魔導書一覧</a></div>';
+  html += '<div class="view-toggle">'
+    + '<button class="view-btn'+(currentView==='field'?' active':'')+'" onclick="switchView(\'field\')">📂 重要度別</button>'
+    + '<button class="view-btn'+(currentView==='level'?' active':'')+'" onclick="switchView(\'level\')">📊 レベル別</button>'
+    + '</div>';
+  if (currentView==='level') {
+    html += '<div class="level-grid">';
+    LEVEL_META.forEach(function(lm){
+      var cnt = GUIDES.filter(function(g){return g.level===lm.lv}).length;
+      var hi = GUIDES.filter(function(g){return g.level===lm.lv&&g.importance===HIGH}).length;
+      html += '<a href="#" class="level-card" onclick="showLevel('+lm.lv+');return false">'
+        +'<div style="font-size:28px;margin-bottom:4px">'+lm.icon+'</div>'
+        +'<div class="lv-num">Lv.'+lm.lv+'</div>'
+        +'<div class="lv-title">'+lm.title+'</div>'
+        +'<div class="lv-count">'+cnt+'記事'+(hi>0?' ★★★':'')+'</div></a>';
+    });
+    html += '</div>';
+  } else {
+    [HIGH, MID].forEach(function(imp){
+      var label = imp===HIGH ? "★★★ 最重要（毎回出題）" : "★★☆ 頻出";
+      var color = imp===HIGH ? "var(--rose)" : "var(--amber)";
+      var guides = GUIDES.filter(function(g){return g.importance===imp});
+      html += '<div style="margin-bottom:24px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
+        + '<span style="font-size:16px;color:'+color+'">'+label+'</span>'
+        + '<span style="font-size:11px;color:#6b7a99;font-weight:700">'+guides.length+'記事</span></div><div class="guide-list">';
+      guides.forEach(function(g){
+        html += '<a href="#" class="guide-card" onclick="showGuide(\''+g.slug+'\');return false">'
+          +'<div class="lv" style="color:'+color+'">Lv.'+g.level+' '+g.importance+'</div>'
+          +'<div class="title">'+g.title+'</div>'
+          +'<div class="desc">'+g.desc+'</div></a>';
+      });
+      html += '</div></div>';
+    });
+  }
+  main.innerHTML = html;
+  updateFieldList();
+}
+
+function switchView(v) { currentView=v; renderMain(); }
+
+function showLevel(lv) {
+  var guides = GUIDES.filter(function(g){return g.level===lv});
+  var lm = LEVEL_META.find(function(m){return m.lv===lv});
+  var main = document.getElementById("mainContent");
+  var html = '<div class="breadcrumb" style="margin-bottom:20px"><a href="#" onclick="showTop();return false">← 魔導書一覧へ</a>'
+    +'<span class="lv-badge">Lv.'+lv+' '+(lm?lm.title:'')+'</span></div><div class="guide-list">';
+  guides.forEach(function(g){
+    var c = g.importance===HIGH ? "var(--rose)" : "var(--amber)";
+    html += '<a href="#" class="guide-card" onclick="showGuide(\''+g.slug+'\');return false">'
+      +'<div class="lv" style="color:'+c+'">'+g.importance+'</div>'
+      +'<div class="title">'+g.title+'</div>'
+      +'<div class="desc">'+g.desc+'</div></a>';
+  });
+  html += '</div>';
+  main.innerHTML = html;
+  updateFieldList();
+}
+
+function showGuide(slug) {
+  var g = GUIDES.find(function(x){return x.slug===slug});
+  if (!g) return;
+  var main = document.getElementById("mainContent");
+  var impColor = g.importance===HIGH ? "var(--rose)" : "var(--amber)";
+  var impBg = g.importance===HIGH ? "rgba(251,113,133,.15)" : "rgba(251,191,36,.15)";
+  main.innerHTML = '<div class="breadcrumb" style="margin-bottom:20px"><a href="#" onclick="showTop();return false">← 魔導書一覧へ</a>'
+    +'<span class="lv-badge" style="color:'+impColor+';border-color:'+impColor+'30">Lv.'+g.level+'</span></div>'
+    +'<span class="imp-badge" style="background:'+impBg+';color:'+impColor+'">重要度：'+g.importance+'</span>'
+    +'<div class="article-header" style="margin-top:4px"><h1>'+g.title+'</h1><p>'+g.desc+'</p>'
+    +'<div class="tags">'+g.tags.map(function(t){return '<span class="tag">🏷 '+t+'</span>'}).join("")+'</div></div>'
+    +'<div class="parchment">'+g.content+'</div>';
+  updateFieldList(slug);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function updateFieldList(activeSlug) {
+  var list = document.getElementById("fieldList");
+  var items = [];
+  [HIGH, MID].forEach(function(imp){
+    var count = GUIDES.filter(function(g){return g.importance===imp}).length;
+    var label = imp===HIGH ? "★★★最重要" : "★★☆頻出";
+    var color = imp===HIGH ? "var(--rose)" : "var(--amber)";
+    var isActive = false;
+    if (activeSlug) { var m = GUIDES.find(function(x){return x.slug===activeSlug}); if(m) isActive = m.importance===imp; }
+    var style = isActive ? 'color:'+color+';border-color:'+color+'50' : '';
+    items.push('<div class="field-btn'+(isActive?' active':'')+'" onclick="showImp(\''+imp+'\')" style="'+style+'">'
+      +'<span>'+label+'</span><span style="font-size:10px;opacity:.6">'+count+'</span></div>');
+  });
+  list.innerHTML = items.join("");
+}
+
+function showImp(imp) {
+  currentView = 'field';
+  var main = document.getElementById("mainContent");
+  var label = imp===HIGH ? "★★★ 最重要" : "★★☆ 頻出";
+  var color = imp===HIGH ? "var(--rose)" : "var(--amber)";
+  var guides = GUIDES.filter(function(g){return g.importance===imp});
+  var html = '<div class="breadcrumb" style="margin-bottom:20px"><a href="#" onclick="showTop();return false">← 魔導書一覧</a>'
+    +'<span class="lv-badge" style="color:'+color+'">'+label+'</span></div><div class="guide-list">';
+  guides.forEach(function(g){
+    html += '<a href="#" class="guide-card" onclick="showGuide(\''+g.slug+'\');return false">'
+      +'<div class="lv" style="color:'+color+'">Lv.'+g.level+' '+g.importance+'</div>'
+      +'<div class="title">'+g.title+'</div>'
+      +'<div class="desc">'+g.desc+'</div></a>';
+  });
+  html += '</div>';
+  main.innerHTML = html;
+  updateFieldList();
+}
+
+showTop();
+</script>
+</body>
+</html>
